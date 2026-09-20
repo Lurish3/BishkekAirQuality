@@ -40,20 +40,16 @@ Raw data files are kept outside the repository.
 
 Requires Python 3.10 or newer.
 
-```bash
 git clone https://github.com/Lurish3/BishkekAirQuality.git
 cd BishkekAirQuality
 
 python -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
-```
 
 For fish shell:
 
-```fish
 source .venv/bin/activate.fish
-```
 
 ## Usage
 
@@ -61,7 +57,6 @@ The main command is `bishkek-air`.
 
 Example using the 2020 dataset:
 
-```bash
 bishkek-air data/raw/Bishkek_PM2.5_2020_YTD.csv \
     --timestamp-col "Date (LT)" \
     --value-col "Raw Conc." \
@@ -70,11 +65,9 @@ bishkek-air data/raw/Bishkek_PM2.5_2020_YTD.csv \
     --qc-valid Valid \
     --year 2020 \
     --out output/2020
-```
 
 The command creates:
 
-```text
 output/2020/
 ├── monthly_means.csv
 ├── yearly_means.csv
@@ -82,7 +75,6 @@ output/2020/
 ├── cleaning_report.json
 ├── monthly_means.png
 └── seasonal_summary.png
-```
 
 ## Command options
 
@@ -118,7 +110,6 @@ Every cleaning step is recorded in `cleaning_report.json`.
 
 For a 2020 run, the report includes counts such as:
 
-```json
 {
   "rows_in": 8652,
   "dropped_missing": 0,
@@ -129,7 +120,6 @@ For a 2020 run, the report includes counts such as:
   "dropped_duplicate_timestamps": 0,
   "rows_out": 8094
 }
-```
 
 ## Analysis
 
@@ -147,15 +137,11 @@ November–March is currently used as the heating season. This is an analytical 
 
 Monthly results from the available years can be combined with:
 
-```bash
 python scripts/combine_monthly.py
-```
 
 This creates:
 
-```text
 output/all_years_monthly.csv
-```
 
 The combined dataset covers 65 calendar months:
 
@@ -165,27 +151,19 @@ The combined dataset covers 65 calendar months:
 
 Create the overall monthly chart:
 
-```bash
 python scripts/make_all_years_plot.py
-```
 
 Output:
 
-```text
 output/all_years_monthly.png
-```
 
 Generate the yearly summary:
 
-```bash
 python scripts/make_yearly_summary.py
-```
 
 Output:
 
-```text
 output/yearly_summary.csv
-```
 
 ## Reproducibility
 
@@ -207,27 +185,20 @@ This makes it possible to identify which input data and settings produced a resu
 
 Run the test suite with:
 
-```bash
 pytest -q
-```
 
 Current test suite:
 
-```text
 27 passed
-```
 
 Run Ruff:
 
-```bash
 ruff check .
-```
 
 CI runs both linting and tests on GitHub Actions.
 
 ## Project structure
 
-```text
 bishkek-air-quality/
 ├── data/raw/              # Raw datasets
 ├── docs/                  # Data documentation
@@ -239,7 +210,6 @@ bishkek-air-quality/
 ├── LICENSE
 ├── pyproject.toml
 └── .gitignore
-```
 
 Main modules:
 
