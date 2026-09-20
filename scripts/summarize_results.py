@@ -43,8 +43,8 @@ def main() -> None:
 
     print("\n== Heating (Nov-Mar) vs non-heating, weighted by n ==")
     is_heating = df["month"].isin(HEATING)
-    print(f"heating:      {weighted_mean(df[is_heating]):.1f} ug/m3  (n = {int(df[is_heating]['n'].sum())})")
-    print(f"non-heating:  {weighted_mean(df[~is_heating]):.1f} ug/m3  (n = {int(df[~is_heating]['n'].sum())})")
+    for name, part in (("heating", df[is_heating]), ("non-heating", df[~is_heating])):
+        print(f"{name:<12} {weighted_mean(part):.1f} ug/m3  (n = {int(part['n'].sum())})")
 
     print("\n== Complete heating seasons (Nov Y .. Mar Y+1), weighted by n ==")
     rows = []
@@ -57,7 +57,8 @@ def main() -> None:
     print(pd.DataFrame(rows).to_string(index=False))
 
     months = sorted(args.months)
-    print(f"\n== Same months in every year: {months}, weighted by n (only years with all of them) ==")
+    print(f"\n== Same months in every year: {months} ==")
+    print("(weighted by n; only years that have all of these months)")
     rows = []
     for year in sorted(df["year"].unique()):
         part = df[(df["year"] == year) & (df["month"].isin(months))]
