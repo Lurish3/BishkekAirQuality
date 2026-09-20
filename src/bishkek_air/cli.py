@@ -11,8 +11,6 @@ from dataclasses import asdict
 from importlib.metadata import version
 from pathlib import Path
 
-import pandas as pd
-
 from .analyze import (
     completeness_summary,
     monthly_means,
@@ -35,10 +33,7 @@ def build_parser() -> argparse.ArgumentParser:
         description="Monthly and seasonal PM2.5 statistics from a CSV file.",
     )
 
-    parser.add_argument(
-        "csv",
-        help="path to the CSV file",
-    )
+    parser.add_argument("csv", help="path to the CSV file")
     parser.add_argument(
         "--timestamp-col",
         required=True,
@@ -124,6 +119,8 @@ def main(argv: list[str] | None = None) -> int:
                     f"No rows found for year {args.year}"
                 )
 
+        available_timestamps = raw["timestamp"].dropna()
+
         cleaned, report = clean_measurements(
             raw,
             invalid_values=tuple(args.invalid),
@@ -151,20 +148,11 @@ def main(argv: list[str] | None = None) -> int:
     yearly.to_csv(out / "yearly_means.csv")
     seasons.to_csv(out / "seasonal_summary.csv")
 
-    if args.year is not None:
+    if args.year is not None and not available_timestamps.empty:
         completeness = completeness_summary(
             cleaned,
-            start=pd.Timestamp(
-                year=args.year,
-                month=1,
-                day=1,
-            ),
-            end=pd.Timestamp(
-                year=args.year,
-                month=12,
-                day=31,
-                hour=23,
-            ),
+            start=available_timestamps.min().floor("h"),
+            end=available_timestamps.max().floor("h"),
         )
     else:
         completeness = completeness_summary(cleaned)
@@ -225,3 +213,7 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
