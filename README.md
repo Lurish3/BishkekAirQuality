@@ -1,150 +1,65 @@
-# bishkek-air-quality
+# Bishkek Air Quality
 
-A small educational project: monthly, yearly and heating vs. non-heating season statistics of PM2.5
-measurements, from a CSV file to tables and charts.
+Python project for analyzing PM2.5 measurements from Bishkek.
 
-> **Status:** version 0.1, work in progress. It is a student project, not a scientific study and not
-> health advice. It does not replace consultation with a doctor.
+The project reads CSV data, cleans invalid measurements, calculates descriptive statistics, and produces CSV, JSON, and PNG outputs.
 
-## What it does
+## Features
 
-- Reads a CSV file with a timestamp column and a PM2.5 column.
-- Cleans it and **counts every removed row** (missing values, "no data" markers, out-of-range values,
-  duplicate timestamps).
-- Computes monthly means, yearly means and a heating vs. non-heating season summary.
-- Saves CSV tables, a cleaning report (JSON) and PNG charts.
+* CSV loading and validation
+* Quality-control filtering
+* PM2.5 data cleaning
+* Monthly and yearly statistics
+* Heating vs. non-heating season comparison
+* Data completeness calculation
+* CSV, JSON, and PNG output
+* Automated tests and Ruff linting
 
-Not included yet: forecasts, maps, real-time data, a website.
+## Data
 
-## Demo
+The project uses PM2.5 measurements from the U.S. Department of State air-quality monitoring data available through AirNow. AirNow provides access to air-quality data from U.S. embassies and consulates. The data is preliminary and is not the same as fully validated regulatory data in the EPA Air Quality System (AQS). See `docs/data-notes.md` for the dataset-specific notes.
 
-The demo uses **synthetic (invented) data**, not real measurements.
+The current dataset contains:
 
-```bash
-python scripts/make_sample_data.py
-bishkek-air data/sample/synthetic.csv \
-  --timestamp-col datetime --value-col pm25 \
-  --timestamp-format "%Y-%m-%d %H:%M" --out output
-```
+| Year | Coverage          |
+| ---- | ----------------- |
+| 2019 | February–December |
+| 2020 | January–December  |
+| 2021 | January–December  |
+| 2022 | January–December  |
+| 2023 | January–December  |
+| 2024 | January–June      |
 
-Output in `output/`: `monthly_means.csv`, `yearly_means.csv`, `seasonal_summary.csv`,
-`cleaning_report.json`, `monthly_means.png`, `seasonal_summary.png`.
+The 2024 data is incomplete and should not be directly compared with full-year results.
+
+Some YTD files contain a small number of measurements from the beginning of the following year. When `--year` is used, only measurements from the selected calendar year are analyzed.
+
+Raw data files are kept outside the repository.
 
 ## Installation
 
 Requires Python 3.10 or newer.
 
 ```bash
-git clone https://github.com/<your-nickname>/bishkek-air-quality.git
-cd bishkek-air-quality
+git clone https://github.com/Lurish3/BishkekAirQuality.git
+cd BishkekAirQuality
+
 python -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
 ```
 
-## Usage with real data
+For fish shell:
 
-1. Download an open dataset and check its license (see `docs/data-notes.md`).
-2. Put the file into `data/raw/` (it is git-ignored on purpose: some data cannot be republished).
-3. Open the file, note the column names, units and the "no data" marker in `docs/data-notes.md`.
-4. Run:
-
-```bash
-bishkek-air data/raw/<file>.csv --timestamp-col "<date column>" --value-col "<pm25 column>"
-```
-
-If your data is an Excel file, export it to CSV first (reading Excel directly is on the roadmap).
-
-## Configuration
-
-| Option | Meaning | Default |
-|---|---|---|
-| `--timestamp-col` | date/time column name (required) | — |
-| `--value-col` | PM2.5 column name (required) | — |
-| `--timestamp-format` | date format, e.g. `"%d.%m.%Y %H:%M"` | auto-detect |
-| `--sep` | CSV separator | `,` |
-| `--out` | output directory | `output` |
-| `--invalid` | values meaning "no data" | `-999` |
-| `--max-value` | values above this are errors | `1000` |
-
-The defaults for `--invalid`, `--max-value` and the heating season months (Nov-Mar, in
-`src/bishkek_air/analyze.py`) are **assumptions**. Check them against your data and sources.
-
-## Testing
-
-```bash
-pytest                                              # inside the virtual environment
-PYTHONPATH=src:tests python -m unittest discover -s tests   # without installing anything
-ruff check .
-```
-
-## Limitations
-
-- One measuring point does not describe the whole city.
-- Different devices are not directly comparable.
-- Gaps in the data affect the means; see `cleaning_report.json` and `n` in the tables.
-- A seasonal difference is an observation, not proof of its cause.
-
-## Roadmap
-
-- [ ] Read Excel files directly
-- [ ] Data notes and cleaning decisions for the real dataset
-- [ ] Short Russian explanation page for non-programmers
-- [ ] Compare with a second data source
-- [ ] Notebook with step-by-step explanation
-
-## License
-
-Code: MIT (see `LICENSE`). Data has its own license: follow the terms of the source you use and# Bishkek Air Quality
-
-Python project for analyzing PM2.5 measurements collected in Bishkek, Kyrgyzstan.
-
-The project processes CSV datasets, removes invalid measurements, calculates monthly, yearly and seasonal statistics, and generates charts.
-
-## Features
-
-* CSV loading and validation
-* PM2.5 data cleaning
-* QC filtering
-* Monthly and yearly statistics
-* Heating vs. non-heating season comparison
-* CSV, JSON and PNG output
-* Automated tests
-
-## Requirements
-
-* Python 3.10+
-* pandas
-* matplotlib
-* pytest
-
-## Installation
-
-Clone the repository and enter the project directory:
-
-```bash
-git clone <repository-url>
-cd bishkek-air-quality
-```
-
-Create a virtual environment:
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-```
-
-Install the dependencies:
-
-```bash
-pip install pandas matplotlib pytest
+```fish
+source .venv/bin/activate.fish
 ```
 
 ## Usage
 
 The main command is `bishkek-air`.
 
-Example:
+Example using the 2020 dataset:
 
 ```bash
 bishkek-air data/raw/Bishkek_PM2.5_2020_YTD.csv \
@@ -156,8 +71,6 @@ bishkek-air data/raw/Bishkek_PM2.5_2020_YTD.csv \
     --year 2020 \
     --out output/2020
 ```
-
-For the 2020 dataset, this leaves 8,094 valid observations after cleaning.
 
 The command creates:
 
@@ -171,28 +84,24 @@ output/2020/
 └── seasonal_summary.png
 ```
 
-### Command options
+## Command options
 
-| Option               | Description                  |
-| -------------------- | ---------------------------- |
-| `--timestamp-col`    | Timestamp column             |
-| `--value-col`        | PM2.5 column                 |
-| `--qc-col`           | QC column                    |
-| `--qc-valid`         | Valid QC value               |
-| `--timestamp-format` | Timestamp format             |
-| `--sep`              | CSV separator                |
-| `--out`              | Output directory             |
-| `--year`             | Select a calendar year       |
-| `--invalid`          | Invalid marker values        |
-| `--max-value`        | Maximum accepted PM2.5 value |
-
-Default invalid marker: `-999`.
-
-Default maximum value: `1000`.
+| Option               | Description                  | Default   |
+| -------------------- | ---------------------------- | --------- |
+| `--timestamp-col`    | Timestamp column             | required  |
+| `--value-col`        | PM2.5 column                 | required  |
+| `--qc-col`           | Quality-control column       | none      |
+| `--qc-valid`         | QC value considered valid    | `Valid`   |
+| `--timestamp-format` | Timestamp format             | automatic |
+| `--sep`              | CSV separator                | `,`       |
+| `--out`              | Output directory             | `output`  |
+| `--year`             | Select a calendar year       | none      |
+| `--invalid`          | Invalid marker values        | `-999`    |
+| `--max-value`        | Maximum accepted PM2.5 value | `1000`    |
 
 ## Data cleaning
 
-Before analysis, the following records are removed:
+Before analysis, the program removes:
 
 * missing timestamps or PM2.5 values;
 * invalid marker values such as `-999`;
@@ -201,9 +110,13 @@ Before analysis, the following records are removed:
 * values above the configured maximum;
 * duplicate timestamps.
 
-A JSON report with the number of removed records is written to `cleaning_report.json`.
+For duplicate timestamps, the first remaining row is kept.
 
-Example:
+The default maximum value is `1000 µg/m³`. This is a configurable validation rule, not a claim that higher concentrations are physically impossible.
+
+Every cleaning step is recorded in `cleaning_report.json`.
+
+For a 2020 run, the report includes counts such as:
 
 ```json
 {
@@ -211,7 +124,8 @@ Example:
   "dropped_missing": 0,
   "dropped_invalid_marker": 11,
   "dropped_invalid_qc": 21,
-  "dropped_out_of_range": 526,
+  "dropped_negative": 526,
+  "dropped_above_max": 0,
   "dropped_duplicate_timestamps": 0,
   "rows_out": 8094
 }
@@ -219,29 +133,19 @@ Example:
 
 ## Analysis
 
-Monthly results are stored in:
+The project calculates:
 
-```text
-monthly_means.csv
-```
+* monthly mean PM2.5 and observation count;
+* yearly mean, standard deviation, quartiles, minimum, maximum, and observation count;
+* heating and non-heating season statistics;
+* expected, observed, and missing hourly observations;
+* percentage of temporal coverage.
 
-Yearly results:
+November–March is currently used as the heating season. This is an analytical grouping, not a claim that heating is the cause of higher PM2.5 concentrations.
 
-```text
-yearly_means.csv
-```
+## Project-wide analysis
 
-Seasonal results:
-
-```text
-seasonal_summary.csv
-```
-
-For the seasonal comparison, the project uses November–March as the heating season. This is an analytical choice, not a causal claim about the source of PM2.5.
-
-## Project-wide results
-
-Monthly results from all available years can be combined with:
+Monthly results from the available years can be combined with:
 
 ```bash
 python scripts/combine_monthly.py
@@ -253,13 +157,13 @@ This creates:
 output/all_years_monthly.csv
 ```
 
-The combined dataset currently contains 65 months:
+The combined dataset covers 65 calendar months:
 
 * February–December 2019
 * 2020–2023
 * January–June 2024
 
-Create the overall monthly chart with:
+Create the overall monthly chart:
 
 ```bash
 python scripts/make_all_years_plot.py
@@ -271,7 +175,7 @@ Output:
 output/all_years_monthly.png
 ```
 
-A yearly summary can be generated with:
+Generate the yearly summary:
 
 ```bash
 python scripts/make_yearly_summary.py
@@ -283,37 +187,50 @@ Output:
 output/yearly_summary.csv
 ```
 
-It contains:
+## Reproducibility
 
-```text
-year
-mean
-n
-heating_mean
-non_heating_mean
+Each CLI run records information about the input and environment in `cleaning_report.json`, including:
+
+* input file;
+* SHA-256 hash of the input file;
+* analysis parameters;
+* cleaning counts;
+* data completeness;
+* Python version;
+* pandas version;
+* matplotlib version;
+* project version.
+
+This makes it possible to identify which input data and settings produced a result.
+
+## Tests
+
+Run the test suite with:
+
+```bash
+pytest -q
 ```
 
-## Data coverage
+Current test suite:
 
-| Year | Coverage          |
-| ---- | ----------------- |
-| 2019 | February–December |
-| 2020 | January–December  |
-| 2021 | January–December  |
-| 2022 | January–December  |
-| 2023 | January–December  |
-| 2024 | January–June      |
+```text
+27 passed
+```
 
-2024 is incomplete, so its yearly mean is not directly comparable with full-year values.
+Run Ruff:
 
-Some YTD files contain a small number of measurements from the beginning of the following year. The `--year` option removes those records when calculating statistics for a specific calendar year.
+```bash
+ruff check .
+```
+
+CI runs both linting and tests on GitHub Actions.
 
 ## Project structure
 
 ```text
 bishkek-air-quality/
-├── data/raw/              # Raw CSV datasets
-├── docs/                  # Data notes
+├── data/raw/              # Raw datasets
+├── docs/                  # Data documentation
 ├── scripts/               # Additional analysis scripts
 ├── output/                # Generated results
 ├── src/bishkek_air/       # Main Python package
@@ -328,30 +245,22 @@ Main modules:
 
 * `load.py` — CSV loading
 * `clean.py` — data cleaning
-* `analyze.py` — statistics
+* `analyze.py` — descriptive statistics
 * `plots.py` — charts
 * `cli.py` — command-line interface
 
-## Tests
-
-Run:
-
-```bash
-pytest -q
-```
-
-Current test suite:
-
-```text
-23 passed
-```
-
 ## Limitations
 
-The project only analyzes the available PM2.5 measurements. It does not use meteorological data or other variables to determine why PM2.5 concentrations change.
-
-The seasonal comparison should therefore be treated as a descriptive statistic rather than evidence of causation.
+* The dataset represents a monitoring location, not the whole city.
+* Missing observations can affect calculated statistics.
+* Different monitoring instruments or locations may not be directly comparable.
+* The analysis does not include weather, traffic, or other possible PM2.5 sources.
+* Seasonal differences are descriptive and do not establish causation.
+* 2024 contains only January–June data.
 
 ## License
 
-No license has been specified yet.
+The project code is licensed under the MIT License. See `LICENSE`.
+
+The original PM2.5 data is not automatically covered by this license. Its source terms and redistribution conditions should be checked before redistributing the data.
+
