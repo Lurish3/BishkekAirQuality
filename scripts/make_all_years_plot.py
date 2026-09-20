@@ -4,7 +4,6 @@ import pandas as pd
 
 from bishkek_air.plots import plot_all_years_monthly
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 INPUT_PATH = PROJECT_ROOT / "output" / "all_years_monthly.csv"

@@ -3,12 +3,22 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import platform
 import sys
 from dataclasses import asdict
+from importlib.metadata import version
 from pathlib import Path
 
-from .analyze import monthly_means, seasonal_summary, yearly_means
+import pandas as pd
+
+from .analyze import (
+    completeness_summary,
+    monthly_means,
+    seasonal_summary,
+    yearly_means,
+)
 from .clean import (
     DEFAULT_INVALID_VALUES,
     DEFAULT_MAX_VALUE,
@@ -16,7 +26,7 @@ from .clean import (
     clean_measurements,
 )
 from .load import DataFormatError, load_measurements
-from .plots import plot_all_years_monthly, plot_monthly, plot_seasons
+from .plots import plot_monthly, plot_seasons
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -29,31 +39,26 @@ def build_parser() -> argparse.ArgumentParser:
         "csv",
         help="path to the CSV file",
     )
-
     parser.add_argument(
         "--timestamp-col",
         required=True,
         help="name of the date/time column",
     )
-
     parser.add_argument(
         "--value-col",
         required=True,
         help="name of the PM2.5 column",
     )
-
     parser.add_argument(
         "--qc-col",
         default=None,
         help="optional quality-control column, e.g. 'QC Name'",
     )
-
     parser.add_argument(
         "--qc-valid",
         default=DEFAULT_VALID_QC,
         help="QC value considered valid (default: Valid)",
     )
-
     parser.add_argument(
         "--timestamp-format",
         default=None,
@@ -63,26 +68,22 @@ def build_parser() -> argparse.ArgumentParser:
             "(default: detect automatically)"
         ),
     )
-
     parser.add_argument(
         "--sep",
         default=",",
         help="CSV separator (default: ,)",
     )
-
     parser.add_argument(
         "--out",
         default="output",
         help="output directory (default: output)",
     )
-
     parser.add_argument(
         "--year",
         type=int,
         default=None,
         help="keep only measurements from this calendar year",
     )
-
     parser.add_argument(
         "--invalid",
         type=float,
@@ -90,7 +91,6 @@ def build_parser() -> argparse.ArgumentParser:
         default=list(DEFAULT_INVALID_VALUES),
         help="values that mean 'no data' (default: -999)",
     )
-
     parser.add_argument(
         "--max-value",
         type=float,
@@ -151,9 +151,55 @@ def main(argv: list[str] | None = None) -> int:
     yearly.to_csv(out / "yearly_means.csv")
     seasons.to_csv(out / "seasonal_summary.csv")
 
+    if args.year is not None:
+        completeness = completeness_summary(
+            cleaned,
+            start=pd.Timestamp(
+                year=args.year,
+                month=1,
+                day=1,
+            ),
+            end=pd.Timestamp(
+                year=args.year,
+                month=12,
+                day=31,
+                hour=23,
+            ),
+        )
+    else:
+        completeness = completeness_summary(cleaned)
+
+    input_path = Path(args.csv)
+    input_sha256 = hashlib.sha256(
+        input_path.read_bytes()
+    ).hexdigest()
+
+    report_data = asdict(report)
+
+    report_data.update(
+        {
+            "input_file": str(input_path),
+            "input_sha256": input_sha256,
+            "year": args.year,
+            "timestamp_col": args.timestamp_col,
+            "value_col": args.value_col,
+            "qc_col": args.qc_col,
+            "qc_valid": args.qc_valid,
+            "timestamp_format": args.timestamp_format,
+            "separator": args.sep,
+            "invalid_values": args.invalid,
+            "max_value": args.max_value,
+            "python_version": platform.python_version(),
+            "pandas_version": version("pandas"),
+            "matplotlib_version": version("matplotlib"),
+            "project_version": version("bishkek-air-quality"),
+            "completeness": completeness,
+        }
+    )
+
     (out / "cleaning_report.json").write_text(
         json.dumps(
-            asdict(report),
+            report_data,
             indent=2,
         )
         + "\n",
@@ -174,7 +220,6 @@ def main(argv: list[str] | None = None) -> int:
         f"Rows read: {report.rows_in}, "
         f"kept: {report.rows_out}"
     )
-
     print(
         f"Results written to: {out.resolve()}"
     )

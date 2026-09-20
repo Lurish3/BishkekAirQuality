@@ -31,13 +31,13 @@ class CleanTests(unittest.TestCase):
                 ("2023-01-01 06:00", float("nan")),
             ]
         )
-
         cleaned, report = clean_measurements(df)
 
         self.assertEqual(report.rows_in, 8)
         self.assertEqual(report.dropped_missing, 2)
         self.assertEqual(report.dropped_invalid_marker, 1)
-        self.assertEqual(report.dropped_out_of_range, 2)
+        self.assertEqual(report.dropped_negative, 1)
+        self.assertEqual(report.dropped_above_max, 1)
         self.assertEqual(report.dropped_duplicate_timestamps, 1)
         self.assertEqual(report.rows_out, 2)
 
@@ -51,7 +51,9 @@ class CleanTests(unittest.TestCase):
             [
                 ("2023-01-01", 1.0),
                 ("2023-01-02", -999.0),
-                ("2023-01-03", 2.0),
+                ("2023-01-03", -5.0),
+                ("2023-01-04", 2000.0),
+                ("2023-01-05", 2.0),
             ]
         )
 
@@ -60,7 +62,9 @@ class CleanTests(unittest.TestCase):
         dropped = (
             report.dropped_missing
             + report.dropped_invalid_marker
-            + report.dropped_out_of_range
+            + report.dropped_invalid_qc
+            + report.dropped_negative
+            + report.dropped_above_max
             + report.dropped_duplicate_timestamps
         )
 
@@ -88,6 +92,30 @@ class CleanTests(unittest.TestCase):
         )
 
         self.assertEqual(len(cleaned), 1)
+
+    def test_custom_max_value(self):
+        df = make_df(
+            [
+                ("2023-01-01", 10.0),
+                ("2023-01-02", 101.0),
+                ("2023-01-03", 100.0),
+            ]
+        )
+
+        cleaned, report = clean_measurements(
+            df,
+            max_value=100.0,
+        )
+
+        self.assertEqual(
+            report.dropped_above_max,
+            1,
+        )
+
+        self.assertEqual(
+            list(cleaned["pm25"]),
+            [10.0, 100.0],
+        )
 
     def test_requires_columns(self):
         with self.assertRaises(ValueError):
